@@ -1,0 +1,157 @@
+/* --- Root Container --- */
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+  font-family: 'Roboto', sans-serif;
+  background-color: #f0f2f5; /* light background */
+  color: #333;
+}
+
+/* --- Logo Styles --- */
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+/* --- Card Styles --- */
+.card {
+  background-color: #fff;
+  padding: 2em;
+  border-radius: 16px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* --- Typography --- */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  color: #1976d2;
+  margin-bottom: 0.5em;
+}
+p, span, li {
+  color: #555;
+  line-height: 1.6;
+}
+
+/* --- Buttons --- */
+button, .MuiButton-root {
+  font-weight: 600;
+  text-transform: none;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+button:hover, .MuiButton-root:hover {
+  transform: scale(1.03);
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Dropzone --- */
+.dropzone {
+  padding: 3rem;
+  border: 2px dashed #1976d2;
+  border-radius: 16px;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.dropzone:hover {
+  background-color: #e3f2fd;
+  border-color: #0d47a1;
+}
+
+/* --- File List --- */
+.file-list li {
+  padding: 0.75em 1em;
+  margin-bottom: 0.5em;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.3s;
+}
+.file-list li:hover {
+  background-color: #e3f2fd;
+}
+
+/* --- Tables --- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+}
+thead {
+  background-color: #1976d2;
+  color: #fff;
+}
+th, td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+tbody tr:hover {
+  background-color: #f1f7ff;
+}
+
+/* --- Linear Progress --- */
+.MuiLinearProgress-root {
+  height: 12px;
+  border-radius: 6px;
+}
+
+/* --- CSV Link / Download Button --- */
+.csv-link {
+  background-color: #1976d2;
+  color: #fff !important;
+  padding: 10px 20px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+.csv-link:hover {
+  background-color: #0d47a1;
+  transform: scale(1.05);
+}
+
+/* --- Read The Docs Link --- */
+.read-the-docs {
+  color: #888;
+  transition: color 0.3s;
+}
+.read-the-docs:hover {
+  color: #1976d2;
+}
+
+/* --- Misc Utilities --- */
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-5 { margin-bottom: 1.5rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-4 { margin-top: 1rem; }
+.mt-5 { margin-top: 1.5rem; }
