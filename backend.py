@@ -8,6 +8,56 @@ from typing import List, Dict, Any
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from supabase import create_client
+from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv() 
+
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+def clean_number(value):
+    """Convert strings like '$25,000' or '25,000' to float"""
+    if isinstance(value, str):
+        value = value.replace(",", "").replace("$", "")
+    try:
+        return float(value)
+    except:
+        return None
+    
+
+def save_to_supabase(narrative_fields, metrics, t12_summary, ai_summary, ai_analysis):
+    data = {
+        "property_name": narrative_fields.get("property_name"),
+        "address": narrative_fields.get("property_address"),
+        "year_built": narrative_fields.get("year_built"),
+        "sqft": clean_number(narrative_fields.get("total_building_sqft")),
+        "metrics": {
+            "cap_rate": clean_number(metrics.get("cap_rate")),
+            "dscr": clean_number(metrics.get("dscr")),
+            "coc_return": clean_number(metrics.get("coc_return")),
+            "irr_5yr": clean_number(metrics.get("irr_5yr")),
+            "rent_gap_pct": clean_number(metrics.get("rent_gap_pct")),
+            "price_per_sqft": clean_number(metrics.get("price_per_sqft")),
+            "price_per_unit": clean_number(metrics.get("price_per_unit")),
+            "break_even_occupancy": clean_number(metrics.get("break_even_occupancy")),
+        },
+        "t12_summary": t12_summary,
+        "ai_summary": ai_summary,
+        "ai_analysis": ai_analysis,
+        "created_at": datetime.utcnow().isoformat()
+    }
+    try:
+        supabase.table("Underwriting").insert(data).execute()
+    except Exception as e:
+        print("Supabase insert failed:", e)
+
+
 
 # Import your existing pipeline functions
 from tester import (
@@ -95,6 +145,9 @@ async def underwrite(
         ai_summary = generate_underwriting_summary(narrative_fields, metrics)
 
         ai_analysis = generate_underwriting_analysis(narrative_fields, metrics)
+
+        # Save to Supabase
+        save_to_supabase(narrative_fields, metrics, t12_summary, ai_summary, ai_analysis)
 
         result = {
     "rent_roll_summary": rent_roll_summary,
