@@ -1073,7 +1073,7 @@ def _guess_is_rent_roll(df: pd.DataFrame) -> bool:
     cols = [str(c) for c in df.columns]
     wanted = [
         "tenant", "suite", "unit", "lease", "psf", "rent",
-        "term", "start", "end", "sf", "sqft", "occupied", "vacant"
+        "term", "start", "end", "sf", "sqft", "occupied", "vacant","Current Rent Total","Market Rent Total"
     ]
     score = sum(any(w in str(c).lower() for w in wanted) for c in cols)
     return score >= 3
@@ -1082,7 +1082,7 @@ def _guess_is_t12(df: pd.DataFrame) -> bool:
     cols = [str(c) for c in df.columns]
     wanted = [
         "income", "revenue", "rent", "gpr", "noi", "expenses",
-        "egi", "vacancy", "operating", "total"
+        "egi", "vacancy", "operating", "total", "Gross Potential Rent", "Effective Gross Income","Operating Expenses","Net Operating Income"
     ]
     score = sum(any(w in str(c).lower() for w in wanted) for c in cols)
     return score >= 2
@@ -1369,12 +1369,65 @@ def parse_t12_from_text(path: str) -> Dict[str, Optional[float]]:
     }
 
 # ------------- AGGREGATION FROM STRUCTURED TABLES -------------
-@traceable(name="aggregate_rent_roll")
+# @traceable(name="aggregate_rent_roll")
+# def aggregate_rent_roll(dfs: List[pd.DataFrame], fallback_pdf_paths: List[str] = []) -> Dict[str, Any]:
+#     """
+#     Compute current_rent_total, market_rent_total and rent_gap_pct from structured dfs.
+#     If none found, optionally attempt text-based parsing on provided fallback_pdf_paths.
+#     """
+#     if dfs:
+#         total_units = 0
+#         current_rent_total = 0.0
+#         market_rent_total = 0.0
+#         for df in dfs:
+#             df = _clean_dataframe(df)
+#             cols = list(df.columns)
+#             col_rent = _first_match(cols, [r"(rent|contract|scheduled|actual)", r"(^|[^a-z])rent([^a-z]|$)", r"Current.*Rent.*Total", r"base.*rent", r"annual.*rent", r"monthly.*rent"])
+#             col_market = _first_match(cols, [r"(market|asking|proforma).*rent",r"Market.*Rent.*Total", r"asking.*rent"])
+#             col_psf = _first_match(cols, [r"psf", r"per\s*sf"])
+#             col_sf = _first_match(cols, [r"sf", r"sq.?ft", r"area"])
+#             total_units += len(df)
+#             cur_sum = sum(_to_number(v) or 0.0 for v in df[col_rent].values) if col_rent else 0.0
+#             mkt_sum = sum(_to_number(v) or 0.0 for v in df[col_market].values) if col_market else 0.0
+#             if (mkt_sum == 0.0) and col_psf and col_sf:
+#                 monthly = bool(re.search(r"(\/mo|per\s*month|monthly)", col_psf.lower()))
+#                 for _, row in df.iterrows():
+#                     psf = _to_number(row.get(col_psf))
+#                     sf = _to_number(row.get(col_sf))
+#                     if psf and sf:
+#                         mkt_sum += psf * sf * (12 if monthly else 1)
+#             current_rent_total += cur_sum
+#             market_rent_total += mkt_sum
+#         rent_gap_pct = None
+#         if market_rent_total > 0:
+#             rent_gap_pct = (market_rent_total - current_rent_total) / market_rent_total * 100.0
+#         return {
+#             "total_units": total_units,
+#             "current_rent_total": current_rent_total if current_rent_total > 0 else None,
+#             "market_rent_total": market_rent_total if market_rent_total > 0 else None,
+#             "rent_gap_pct": rent_gap_pct,
+#         }
+#     # fallback: try parse from provided PDFs using text heuristics
+#     for p in fallback_pdf_paths:
+#         try:
+#             text_df = parse_rent_roll_from_text(p)
+#             if not text_df.empty:
+#                 cand = text_df.copy()
+#                 cand["best_amount"] = cand["best_amount"].apply(lambda x: x if x and x > 1000 else None)
+#                 total_units = len(cand)
+#                 current_rent_total = cand["best_amount"].dropna().sum() if "best_amount" in cand else None
+#                 return {
+#                     "total_units": total_units if total_units>0 else None,
+#                     "current_rent_total": current_rent_total if current_rent_total and current_rent_total>0 else None,
+#                     "market_rent_total": None,
+#                     "rent_gap_pct": None,
+#                 }
+#         except Exception:
+#             continue
+#     return {"total_units": None, "current_rent_total": None, "market_rent_total": None, "rent_gap_pct": None}
+
+
 def aggregate_rent_roll(dfs: List[pd.DataFrame], fallback_pdf_paths: List[str] = []) -> Dict[str, Any]:
-    """
-    Compute current_rent_total, market_rent_total and rent_gap_pct from structured dfs.
-    If none found, optionally attempt text-based parsing on provided fallback_pdf_paths.
-    """
     if dfs:
         total_units = 0
         current_rent_total = 0.0
@@ -1398,16 +1451,21 @@ def aggregate_rent_roll(dfs: List[pd.DataFrame], fallback_pdf_paths: List[str] =
                         mkt_sum += psf * sf * (12 if monthly else 1)
             current_rent_total += cur_sum
             market_rent_total += mkt_sum
+
+        # Ensure rent gap is always calculated if possible
         rent_gap_pct = None
-        if market_rent_total > 0:
+        if market_rent_total > 0 and current_rent_total is not None:
             rent_gap_pct = (market_rent_total - current_rent_total) / market_rent_total * 100.0
+        elif current_rent_total and market_rent_total == 0:
+            rent_gap_pct = 0.0  # fallback if market rent missing
+
         return {
-            "total_units": total_units,
-            "current_rent_total": current_rent_total if current_rent_total > 0 else None,
-            "market_rent_total": market_rent_total if market_rent_total > 0 else None,
+            "total_units": total_units or None,
+            "current_rent_total": current_rent_total or None,
+            "market_rent_total": market_rent_total or None,
             "rent_gap_pct": rent_gap_pct,
         }
-    # fallback: try parse from provided PDFs using text heuristics
+    # fallback: text-based parsing
     for p in fallback_pdf_paths:
         try:
             text_df = parse_rent_roll_from_text(p)
@@ -1416,15 +1474,19 @@ def aggregate_rent_roll(dfs: List[pd.DataFrame], fallback_pdf_paths: List[str] =
                 cand["best_amount"] = cand["best_amount"].apply(lambda x: x if x and x > 1000 else None)
                 total_units = len(cand)
                 current_rent_total = cand["best_amount"].dropna().sum() if "best_amount" in cand else None
+                # rent gap can't be computed without market rent
+                rent_gap_pct = None
                 return {
                     "total_units": total_units if total_units>0 else None,
                     "current_rent_total": current_rent_total if current_rent_total and current_rent_total>0 else None,
                     "market_rent_total": None,
-                    "rent_gap_pct": None,
+                    "rent_gap_pct": rent_gap_pct,
                 }
         except Exception:
             continue
     return {"total_units": None, "current_rent_total": None, "market_rent_total": None, "rent_gap_pct": None}
+
+
 
 @traceable(name="aggregate_t12")
 def aggregate_t12(dfs: List[pd.DataFrame], fallback_pdf_paths: List[str] = []) -> Dict[str, Any]:
@@ -1475,7 +1537,7 @@ def aggregate_t12(dfs: List[pd.DataFrame], fallback_pdf_paths: List[str] = []) -
         "net_operating_income": None
     }
 
-# ------------- RAG & Narrative -------------
+# # ------------- RAG & Narrative -------------
 def _format_docs(docs):
     return "\n\n".join(d.page_content for d in docs)
 
@@ -1530,6 +1592,68 @@ Context:
         return json.loads(out)
     except Exception:
         return {"raw": out}
+
+
+# def _format_docs(docs):
+#     return "\n\n".join(d.page_content for d in docs)
+
+# @traceable(name="split_documents")
+# def split_documents(docs, chunk_size=TABLE_CHUNK_SIZE, chunk_overlap=TABLE_CHUNK_OVERLAP):
+#     splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+#     final_splits = []
+#     for doc in docs:
+#         final_splits.extend(splitter.split_documents([doc]))
+#     print(f"Total chunks after splitting: {len(final_splits)}")
+#     return final_splits
+
+# @traceable(name="build_vectorstore")
+# def build_vectorstore(splits):
+#     emb = OpenAIEmbeddings(model=EMBED_MODEL)
+#     return FAISS.from_documents(splits, emb)
+
+# @traceable(name="extract_all_fields")
+# def extract_all_fields(vs) -> Dict[str, Any]:
+#     """Extract ALL required underwriting fields from vector DB."""
+#     retriever = vs.as_retriever(search_type="similarity", search_kwargs={"k": 10})
+#     llm = ChatOpenAI(model=LLM_MODEL, temperature=0)
+    
+#     prompt = ChatPromptTemplate.from_messages([
+#         ("system", "Extract ONLY from the provided context. If not found, write 'null'. Respond strictly in JSON."),
+#         ("human", """Extract these fields:
+# - property_name
+# - property_address
+# - property_type
+# - year_built
+# - renovation_year
+# - number_of_stories
+# - total_units_or_suites
+# - total_building_sqft
+# - amenities
+
+# Financials:
+# - gross_potential_rent
+# - vacancy
+# - effective_gross_income
+# - operating_expenses
+# - net_operating_income
+# - purchase_price
+# - annual_debt_service
+# - equity_invested
+# - current_rent_total
+# - market_rent_total
+
+# Context:
+# {context}""")
+#     ])
+
+#     chain = (retriever | RunnableLambda(_format_docs)) | prompt | llm | StrOutputParser()
+#     query = "Extract all property and financial fields"
+#     out = chain.invoke(query)
+#     out = re.sub(r"^```(?:json)?\s*|\s*```$", "", out.strip(), flags=re.I|re.M)
+#     try:
+#         return json.loads(out)
+#     except Exception:
+#         return {"raw": out}
 
 # ------------- METRICS -------------
 def compute_metrics(
@@ -1596,32 +1720,119 @@ def compute_metrics(
     }
 
 
-# ------------- AI SUMMARY -------------
-def generate_underwriting_summary(narrative: Dict[str, Any], metrics: Dict[str, Any]) -> str:
-    """Use OpenAI to generate a brief professional underwriting summary."""
-    prompt = f"""
-You are a real estate underwriting analyst. 
-Given the following property narrative and financial metrics, create a concise, professional underwriting summary:
+# def compute_metrics(extracted: Dict[str, Any]) -> Dict[str, Any]:
+#     """Compute metrics directly from extracted JSON fields."""
+#     noi = _to_number(extracted.get("net_operating_income"))
+#     gpr = _to_number(extracted.get("gross_potential_rent"))
+#     egi = _to_number(extracted.get("effective_gross_income"))
+#     opex = _to_number(extracted.get("operating_expenses"))
 
-Narrative:
+#     current_rent_total = _to_number(extracted.get("current_rent_total"))
+#     market_rent_total = _to_number(extracted.get("market_rent_total"))
+#     rent_gap_pct = None
+#     if current_rent_total and market_rent_total:
+#         rent_gap_pct = (market_rent_total - current_rent_total) / market_rent_total * 100.0
+
+#     sqft = _to_number(extracted.get("total_building_sqft"))
+#     units = _to_number(extracted.get("total_units_or_suites"))
+
+#     purchase_price = _to_number(extracted.get("purchase_price"))
+#     if not purchase_price and noi:
+#         purchase_price = noi / 0.075  # assume 7.5% cap if price not given
+
+#     annual_debt_service = _to_number(extracted.get("annual_debt_service")) or (purchase_price * 0.05 if purchase_price else None)
+#     equity_invested = _to_number(extracted.get("equity_invested")) or (purchase_price * 0.25 if purchase_price else None)
+
+#     # Metrics
+#     cap_rate = (noi / purchase_price) * 100 if (noi and purchase_price) else None
+#     dscr = (noi / annual_debt_service) if (noi and annual_debt_service) else None
+#     coc = ((noi - annual_debt_service) / equity_invested) * 100 if (noi and annual_debt_service and equity_invested) else None
+#     price_per_sf = (purchase_price / sqft) if (purchase_price and sqft) else None
+#     price_per_unit = (purchase_price / units) if (purchase_price and units) else None
+#     break_even_occ = ((opex or 0.0) + (annual_debt_service or 0.0)) / egi * 100 if egi else None
+
+#     # IRR (5yr, using NOI - debt service as proxy cash flow)
+#     irr_5yr = None
+#     if noi and annual_debt_service and equity_invested:
+#         base_cash_flow = noi - annual_debt_service
+#         cash_flows = [-equity_invested] + [base_cash_flow * ((1 + 0.02) ** i) for i in range(1, 6)]
+#         try:
+#             irr_5yr = compute_irr(cash_flows)
+#         except Exception:
+#             irr_5yr = None
+
+#     return {
+#         "cap_rate": cap_rate,
+#         "dscr": dscr,
+#         "coc_return": coc,
+#         "irr_5yr": irr_5yr,
+#         "rent_gap_pct": rent_gap_pct,
+#         "price_per_sqft": price_per_sf,
+#         "price_per_unit": price_per_unit,
+#         "break_even_occupancy": break_even_occ,
+#     }
+
+
+# ------------- AI SUMMARY -------------
+# def generate_underwriting_summary(narrative: Dict[str, Any], metrics: Dict[str, Any]) -> str:
+#     """Use OpenAI to generate a brief professional underwriting summary."""
+#     prompt = f"""
+# You are a real estate underwriting analyst. 
+# Given the following property narrative and financial metrics, create a concise, professional underwriting summary:
+
+# Narrative:
+# {json.dumps(narrative, indent=2)}
+
+# Metrics:
+# {json.dumps(metrics, indent=2)}
+
+# Summary:
+# """
+#     try:
+#         response = ChatOpenAI(
+#             model="gpt-4",
+#             temperature=0.3,
+#         )
+#         messages=[{"role": "user", "content": prompt}]
+#         response = response.invoke(messages)
+#         summary = response.content.strip()
+#         return summary
+#     except Exception as e:
+#         return f"AI summary generation failed: {e}"
+
+
+def generate_underwriting_summary(narrative: Dict[str, Any], metrics: Dict[str, Any]) -> str:
+    """
+    Generate a professional, actionable underwriting summary.
+    Includes property overview, key metrics, rent gap %, and recommendation hint.
+    """
+    prompt = f"""
+You are a senior real estate underwriting analyst. 
+Given the property narrative and financial metrics below, create a concise, professional underwriting summary.
+The summary should allow an investor to quickly assess whether to consider buying or not. 
+Include key highlights, property overview, financials (NOI, GPR, rent gap %, IRR), and any important observations.
+
+Property Narrative:
 {json.dumps(narrative, indent=2)}
 
-Metrics:
+Financial Metrics:
 {json.dumps(metrics, indent=2)}
 
 Summary:
 """
     try:
-        response = ChatOpenAI(
-            model="gpt-4",
-            temperature=0.3,
-        )
-        messages=[{"role": "user", "content": prompt}]
-        response = response.invoke(messages)
+        llm = ChatOpenAI(model="gpt-4", temperature=0.3)
+        messages = [{"role": "user", "content": prompt}]
+        response = llm.invoke(messages)
         summary = response.content.strip()
+
+        # Optional: Add fallback for empty or invalid content
+        if not summary:
+            summary = "AI summary generation returned empty. Check inputs or model."
         return summary
     except Exception as e:
         return f"AI summary generation failed: {e}"
+
 # ------------- AI ANALYSIS -------------
 def generate_underwriting_analysis(narrative: Dict[str, Any], metrics: Dict[str, Any]) -> Dict[str, str]:
     """
@@ -1711,3 +1922,59 @@ if __name__ == "__main__":
 
     overrides = json.loads(args.overrides) if args.overrides else {}
     run_pipeline(args.inputs, overrides=overrides)
+
+
+
+# def run_pipeline(inputs: List[str]):
+#     print("\n--- LOADING FILES ---")
+#     docs = load_files(inputs)
+
+#     print("\n--- BUILDING VECTOR DB ---")
+#     splits = split_documents(docs)
+#     vs = build_vectorstore(splits)
+
+#     print("\n--- EXTRACTING FIELDS ---")
+#     extracted = extract_all_fields(vs)
+#     print(json.dumps(extracted, indent=2))
+
+#     print("\n--- METRICS ---")
+#     metrics = compute_metrics(extracted)
+#     for k, v in metrics.items():
+#         print(f"{k}: {v}")
+
+#     print("\n--- AI UNDERWRITING ANALYSIS ---")
+#     ai_analysis = generate_underwriting_analysis(extracted, metrics)
+#     print(json.dumps(ai_analysis, indent=2))
+
+#     print("\n--- QUICK SUMMARY ---")
+#     print(f"Property: {extracted.get('property_name')}")
+#     print(f"Address: {extracted.get('property_address')}")
+#     print(f"Year Built: {extracted.get('year_built')}")
+#     print(f"SqFt: {extracted.get('total_building_sqft')}")
+#     print(f"NOI: {extracted.get('net_operating_income')}")
+#     print(f"GPR: {extracted.get('gross_potential_rent')}")
+#     print(f"Rent Gap %: {metrics.get('rent_gap_pct')}")
+#     print(f"5-Year IRR: {metrics.get('irr_5yr')}%")
+#     print(f"Investment Recommendation: {ai_analysis.get('investment_recommendation')}")
+
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description="CRE Underwriting Pipeline (VectorDB driven)")
+#     parser.add_argument("--inputs", "-i", nargs="+", required=True, help="Input files (pdf/csv/xlsx/txt/json)")
+#     args = parser.parse_args()
+#     run_pipeline(args.inputs)
+
+
+
+
+
+#     utils/
+# ├── __init__.py
+# ├── file_loaders.py
+# ├── table_parsers.py
+# ├── text_parsers.py
+# ├── aggregation.py
+# ├── metrics.py
+# ├── rag_narrative.py
+# ├── ai_summary.py
+# ├── ai_analysis.py
+# ├── helpers.py

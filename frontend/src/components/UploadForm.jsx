@@ -16,7 +16,7 @@ import {
   ListItemText,
   Paper,
 } from "@mui/material";
-import { CloudUpload, Description, CheckCircle } from "@mui/icons-material";
+import { CloudUpload, InsertDriveFile, CheckCircle } from "@mui/icons-material";
 
 export default function UploadForm({ onAnalysisComplete }) {
   const [files, setFiles] = useState([]);
@@ -54,62 +54,66 @@ export default function UploadForm({ onAnalysisComplete }) {
   return (
     <Box
       sx={{
-        width: "100%", // full page width
-        minHeight: "100vh", // full page height
-        bgcolor: "#f0f2f5",
+        width: "220%",
+        height: "90vh",
+        bgcolor: "#e3f2fd",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        px: 2,
+        p: 3,
       }}
     >
-      {/* Upload Form Card (medium size, centered) */}
       <Card
-        elevation={10}
+        elevation={12}
         sx={{
-          width: { xs: "90%", sm: "70%", md: 500 }, // medium fixed width
-          maxWidth: "100%",
-          bgcolor: "#fff",
-          borderRadius: 3,
-          boxShadow: 8,
+          width: "100%",
+          maxWidth: 900, // max width for large screens
+          borderRadius: 4,
+          boxShadow: "0px 15px 30px rgba(0,0,0,0.15)",
           transition: "0.3s",
-          "&:hover": { boxShadow: 12 },
-          py: 5,
-          px: 4,
+          "&:hover": { boxShadow: "0px 20px 40px rgba(0,0,0,0.25)" },
         }}
       >
         <CardHeader
           title={
             <Typography
-              variant="h5"
+              variant="h3"
               align="center"
-              sx={{ color: "#1976d2", fontWeight: "bold" }}
+              sx={{
+                fontWeight: "bold",
+                background: "linear-gradient(90deg, #1976d2, #42a5f5)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
             >
               Upload PDF for Analysis
             </Typography>
           }
         />
-        <CardContent>
+        <CardContent sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
           {/* Dropzone */}
           <Paper
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             variant="outlined"
             sx={{
-              p: 6,
+              p: { xs: 4, sm: 6 },
               textAlign: "center",
               borderStyle: "dashed",
-              borderColor: "#1976d2",
+              borderColor: "#42a5f5",
               cursor: "pointer",
               mb: 4,
               position: "relative",
               borderRadius: 3,
               transition: "0.3s",
-              "&:hover": { borderColor: "#0d47a1", backgroundColor: "#e3f2fd" },
+              "&:hover": {
+                borderColor: "#1976d2",
+                backgroundColor: "#bbdefb",
+              },
             }}
           >
-            <CloudUpload sx={{ fontSize: 70, color: "#1976d2", mb: 2 }} />
-            <Typography variant="body1" color="text.secondary">
+            <CloudUpload sx={{ fontSize: 80, color: "#1976d2", mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">
               Drag & Drop your PDF files here <br /> or click to select
             </Typography>
             <input
@@ -130,7 +134,17 @@ export default function UploadForm({ onAnalysisComplete }) {
 
           {/* File Preview */}
           {files.length > 0 && (
-            <List sx={{ mb: 4 }}>
+            <List
+              sx={{
+                mb: 4,
+                maxHeight: 250,
+                overflowY: "auto",
+                bgcolor: "#f9f9f9",
+                borderRadius: 2,
+                px: 1,
+                py: 0.5,
+              }}
+            >
               {files.map((file, idx) => (
                 <ListItem
                   key={idx}
@@ -144,9 +158,12 @@ export default function UploadForm({ onAnalysisComplete }) {
                   }}
                 >
                   <ListItemIcon>
-                    <Description sx={{ color: "#1976d2" }} />
+                    <InsertDriveFile sx={{ color: "#1976d2" }} />
                   </ListItemIcon>
-                  <ListItemText primary={file.name} />
+                  <ListItemText
+                    primary={file.name}
+                    secondary={`${(file.size / 1024).toFixed(2)} KB`}
+                  />
                   <CheckCircle sx={{ color: "success.main" }} />
                 </ListItem>
               ))}
@@ -159,13 +176,20 @@ export default function UploadForm({ onAnalysisComplete }) {
               <LinearProgress
                 variant="determinate"
                 value={progress}
-                sx={{ height: 12, borderRadius: 6 }}
+                sx={{
+                  height: 14,
+                  borderRadius: 6,
+                  backgroundColor: "#bbdefb",
+                  "& .MuiLinearProgress-bar": {
+                    background: "linear-gradient(90deg, #1976d2, #42a5f5)",
+                  },
+                }}
               />
               <Typography
                 variant="body2"
                 color="text.secondary"
                 align="center"
-                sx={{ mt: 1 }}
+                sx={{ mt: 1, fontWeight: "bold" }}
               >
                 {progress}%
               </Typography>
@@ -175,15 +199,18 @@ export default function UploadForm({ onAnalysisComplete }) {
           {/* Submit Button */}
           <Button
             variant="contained"
-            color="primary"
             fullWidth
             onClick={handleSubmit}
             disabled={loading}
             sx={{
               py: 2,
               fontWeight: "bold",
-              transition: "0.3s",
-              "&:hover": { backgroundColor: "#0d47a1", transform: "scale(1.03)" },
+              fontSize: "1.2rem",
+              background: "linear-gradient(90deg, #1976d2, #42a5f5)",
+              "&:hover": {
+                background: "linear-gradient(90deg, #1565c0, #1e88e5)",
+                transform: "scale(1.03)",
+              },
             }}
           >
             {loading ? "Analyzing..." : "Upload & Analyze"}

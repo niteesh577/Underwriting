@@ -259,15 +259,6 @@
 //   );
 // }
 
-
-
-
-
-
-
-
-
-
 "use client";
 
 import { useState } from "react";
@@ -286,7 +277,11 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  Collapse,
+  IconButton,
 } from "@mui/material";
+import { ExpandMore, ExpandLess } from "@mui/icons-material";
+import CountUp from "react-countup";
 import {
   LineChart,
   Line,
@@ -300,6 +295,8 @@ import {
 } from "recharts";
 
 export default function AnalysisPage({ data }) {
+  const [openTables, setOpenTables] = useState({});
+
   if (!data)
     return (
       <Typography
@@ -311,10 +308,9 @@ export default function AnalysisPage({ data }) {
         No analysis yet.
       </Typography>
     );
-    const { narrative_fields, metrics, t12_summary, tables, ai_summary, quick_summary } = data;
 
-    // Use quick_summary for structured AI analysis
-    const aiAnalysis = quick_summary || {};
+  const { narrative_fields, metrics, t12_summary, tables, ai_summary, quick_summary } = data;
+  const aiAnalysis = quick_summary || {};
 
   // CSV export data
   const csvData = [
@@ -350,7 +346,7 @@ export default function AnalysisPage({ data }) {
     ["Risk Considerations", aiAnalysis.risk_considerations || "N/A"],
   ];
 
-  // Chart data for T12
+  // Chart data
   const t12ChartData = [
     { name: "Gross Rent", value: t12_summary.gross_potential_rent },
     { name: "Vacancy", value: t12_summary.vacancy },
@@ -358,7 +354,6 @@ export default function AnalysisPage({ data }) {
     { name: "Net Income", value: t12_summary.net_operating_income },
   ];
 
-  // Metrics chart data
   const metricsChartData = [
     { name: "Cap Rate", value: metrics.cap_rate ? metrics.cap_rate * 100 : 0 },
     { name: "DSCR", value: metrics.dscr || 0 },
@@ -366,11 +361,26 @@ export default function AnalysisPage({ data }) {
     { name: "Rent Gap %", value: metrics.rent_gap_pct || 0 },
   ];
 
+  const toggleTable = (idx) => {
+    setOpenTables((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
   return (
-    <Box sx={{ maxWidth: 1400, mx: "auto", mt: 5, mb: 5, p: 3, bgcolor: "#fff" }}>
+    <Box sx={{ maxWidth: 1400, mx: "auto", mt: 5, mb: 5, px: 3 }}>
       {/* Header */}
       <Box sx={{ textAlign: "center", mb: 5 }}>
-        <Typography variant="h3" fontWeight="bold" sx={{ color: "#1976d2" }}>
+        <Typography
+          variant="h3"
+          fontWeight="bold"
+          sx={{
+            color: "#1976d2",
+            background: "linear-gradient(90deg, #1976d2, #42a5f5)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            transition: "0.5s",
+            "&:hover": { transform: "scale(1.05)" },
+          }}
+        >
           RE Underwriting
         </Typography>
         <Typography variant="subtitle1" sx={{ color: "#555" }}>
@@ -379,7 +389,18 @@ export default function AnalysisPage({ data }) {
       </Box>
 
       {/* Property Overview */}
-      <Card sx={{ mb: 4, p: 3, boxShadow: 3, transition: "0.3s", "&:hover": { boxShadow: 6 } }}>
+      <Card
+        sx={{
+          mb: 4,
+          p: 3,
+          boxShadow: 4,
+          transition: "0.5s",
+          borderRadius: 3,
+          "&:hover": { boxShadow: 8, transform: "translateY(-5px)" },
+          borderLeft: "6px solid #1976d2",
+          background: "#f9faff",
+        }}
+      >
         <CardHeader
           title={
             <Typography variant="h5" fontWeight="bold" sx={{ color: "#1976d2" }}>
@@ -394,57 +415,62 @@ export default function AnalysisPage({ data }) {
             {narrative_fields.total_building_sqft} Sq Ft | Built {narrative_fields.year_built}
           </Typography>
           {narrative_fields.amenities && (
-            <Typography sx={{ mt: 1 }}>Amenities: {narrative_fields.amenities}</Typography>
+            <Typography sx={{ mt: 1, fontStyle: "italic", color: "#1976d2" }}>
+              Amenities: {narrative_fields.amenities}
+            </Typography>
           )}
         </CardContent>
       </Card>
 
-
       {/* AI Summary */}
-{ai_summary && (
-  <Card sx={{ mb: 4, p: 3, boxShadow: 3 }}>
-    <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: "#1976d2" }}>
-      AI Underwriting Summary
-    </Typography>
-    <Typography sx={{ color: "#555" }}>{ai_summary}</Typography>
-  </Card>
-)}
+      {ai_summary && (
+        <Card sx={{ mb: 4, p: 3, boxShadow: 4, borderRadius: 3, borderTop: "5px solid #42a5f5", background: "#f0f8ff" }}>
+          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: "#1976d2" }}>
+            AI Underwriting Summary
+          </Typography>
+          <Typography sx={{ color: "#555", fontSize: "1rem", lineHeight: 1.6 }}>
+            {ai_summary}
+          </Typography>
+        </Card>
+      )}
 
-{/* AI Analysis */}
-<Card sx={{ mb: 4, p: 3, boxShadow: 3 }}>
-  <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: "#1976d2" }}>
-    AI Analysis
-  </Typography>
-  <Typography sx={{ mb: 1 }}>
-    <strong>Investment Recommendation:</strong> {aiAnalysis["Investment Recommendation"] || "N/A"}
-  </Typography>
-  <Typography sx={{ mb: 1 }}>
-    <strong>Key Investment Highlights:</strong> {aiAnalysis["Key Investment Highlights"] || "N/A"}
-  </Typography>
-  <Typography sx={{ mb: 1 }}>
-    <strong>Risk Considerations:</strong> {aiAnalysis["Risk Considerations"] || "N/A"}
-  </Typography>
-</Card>
+      {/* AI Analysis */}
+      <Card sx={{ mb: 4, p: 3, boxShadow: 4, borderRadius: 3, borderLeft: "5px solid #1976d2", background: "#f9faff" }}>
+        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: "#1976d2" }}>
+          AI Analysis
+        </Typography>
+        <Typography sx={{ mb: 1 }}>
+          <strong>Investment Recommendation:</strong>{" "}
+          {aiAnalysis["Investment Recommendation"] || "N/A"}
+        </Typography>
+        <Typography sx={{ mb: 1 }}>
+          <strong>Key Investment Highlights:</strong>{" "}
+          {aiAnalysis["Key Investment Highlights"] || "N/A"}
+        </Typography>
+        <Typography sx={{ mb: 1 }}>
+          <strong>Risk Considerations:</strong>{" "}
+          {aiAnalysis["Risk Considerations"] || "N/A"}
+        </Typography>
+      </Card>
 
-
-      {/* Financial Metrics Grid */}
+      {/* Financial Metrics */}
       <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: "#1976d2" }}>
         Financial Metrics Overview
       </Typography>
       <Grid container spacing={3} mb={4}>
-        <MetricCard label="Cap Rate" value={metrics.cap_rate ? (metrics.cap_rate * 100).toFixed(1) + "%" : "N/A"} />
-        <MetricCard label="DSCR" value={metrics.dscr?.toFixed(2) || "N/A"} />
-        <MetricCard label="CoC Return" value={metrics.coc_return ? (metrics.coc_return * 100).toFixed(1) + "%" : "N/A"} />
-        <MetricCard label="IRR (5yr)" value={metrics.irr_5yr ? metrics.irr_5yr.toFixed(1) + "%" : "N/A"} />
-        <MetricCard label="Rent Gap %" value={metrics.rent_gap_pct ? metrics.rent_gap_pct.toFixed(1) + "%" : "N/A"} />
-        <MetricCard label="Price per SqFt" value={metrics.price_per_sqft ? `$${metrics.price_per_sqft}` : "N/A"} />
-        <MetricCard label="Price per Unit" value={metrics.price_per_unit ? `$${metrics.price_per_unit}` : "N/A"} />
-        <MetricCard label="Break-even Occupancy" value={metrics.break_even_occupancy ? metrics.break_even_occupancy.toFixed(1) + "%" : "N/A"} />
-        <MetricCard label="NOI" value={`$${t12_summary.net_operating_income?.toLocaleString()}`} />
+        <MetricCard label="Cap Rate" value={metrics.cap_rate*100} suffix="%" />
+        <MetricCard label="DSCR" value={metrics.dscr} />
+        <MetricCard label="CoC Return" value={metrics.coc_return*100} suffix="%" />
+        <MetricCard label="IRR (5yr)" value={metrics.irr_5yr} suffix="%" />
+        <MetricCard label="Rent Gap %" value={metrics.rent_gap_pct} suffix="%" />
+        <MetricCard label="Price per SqFt" value={metrics.price_per_sqft} prefix="$" />
+        <MetricCard label="Price per Unit" value={metrics.price_per_unit} prefix="$" />
+        <MetricCard label="Break-even Occupancy" value={metrics.break_even_occupancy*100} suffix="%" />
+        <MetricCard label="NOI" value={t12_summary.net_operating_income} prefix="$" />
       </Grid>
 
-      {/* T12 Line Chart */}
-      <Card sx={{ mb: 4, p: 3, boxShadow: 3 }}>
+      {/* T12 Chart */}
+      <Card sx={{ mb: 4, p: 3, boxShadow: 4, borderRadius: 3, borderTop: "5px solid #1976d2", background: "#f0f8ff" }}>
         <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: "#1976d2" }}>
           T12 Financial Breakdown
         </Typography>
@@ -460,7 +486,7 @@ export default function AnalysisPage({ data }) {
       </Card>
 
       {/* Metrics Bar Chart */}
-      <Card sx={{ mb: 4, p: 3, boxShadow: 3 }}>
+      <Card sx={{ mb: 4, p: 3, boxShadow: 4, borderRadius: 3, borderLeft: "5px solid #42a5f5", background: "#f9faff" }}>
         <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: "#1976d2" }}>
           Key Metrics Comparison
         </Typography>
@@ -475,35 +501,62 @@ export default function AnalysisPage({ data }) {
         </ResponsiveContainer>
       </Card>
 
-      {/* Rent Roll / Extracted Tables */}
+      {/* Extracted Tables */}
       {tables && tables.length > 0 && (
         <Box sx={{ mb: 4 }}>
           <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: "#1976d2" }}>
             Extracted Tables
           </Typography>
           {tables.map((table, idx) => (
-            <TableContainer key={idx} component={Paper} sx={{ mb: 3, boxShadow: 2 }}>
-              <Table sx={{ minWidth: 650 }} aria-label="table">
-                <TableHead sx={{ bgcolor: "#1976d2" }}>
-                  <TableRow>
-                    {table.headers.map((h, i) => (
-                      <TableCell key={i} sx={{ color: "#fff", fontWeight: "bold" }}>
-                        {h}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {table.rows.map((row, rIdx) => (
-                    <TableRow key={rIdx} sx={{ "&:hover": { backgroundColor: "#e3f2fd", transition: "0.3s" } }}>
-                      {row.map((cell, cIdx) => (
-                        <TableCell key={cIdx}>{cell}</TableCell>
+            <Card
+              key={idx}
+              sx={{
+                mb: 2,
+                boxShadow: 3,
+                borderRadius: 2,
+                transition: "0.3s",
+                "&:hover": { transform: "translateY(-3px)", boxShadow: 6 },
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  p: 2,
+                  cursor: "pointer",
+                  bgcolor: "#f0f4ff",
+                }}
+                onClick={() => toggleTable(idx)}
+              >
+                <Typography fontWeight="bold">{table.name || `Table ${idx + 1}`}</Typography>
+                <IconButton>{openTables[idx] ? <ExpandLess /> : <ExpandMore />}</IconButton>
+              </Box>
+              <Collapse in={openTables[idx]} timeout="auto" unmountOnExit>
+                <TableContainer component={Paper} sx={{ m: 2, boxShadow: 2 }}>
+                  <Table>
+                    <TableHead sx={{ bgcolor: "#1976d2" }}>
+                      <TableRow>
+                        {table.headers.map((h, i) => (
+                          <TableCell key={i} sx={{ color: "#fff", fontWeight: "bold" }}>
+                            {h}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {table.rows.map((row, rIdx) => (
+                        <TableRow key={rIdx} sx={{ "&:hover": { backgroundColor: "#e3f2fd" } }}>
+                          {row.map((cell, cIdx) => (
+                            <TableCell key={cIdx}>{cell}</TableCell>
+                          ))}
+                        </TableRow>
                       ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Collapse>
+            </Card>
           ))}
         </Box>
       )}
@@ -514,13 +567,14 @@ export default function AnalysisPage({ data }) {
           data={csvData}
           filename={`${narrative_fields.property_name}_analysis.csv`}
           style={{
-            backgroundColor: "#1976d2",
+            background: "linear-gradient(90deg, #1976d2, #42a5f5)",
             color: "#fff",
-            padding: "10px 25px",
-            borderRadius: 8,
+            padding: "12px 28px",
+            borderRadius: 12,
             textDecoration: "none",
             fontWeight: "bold",
             transition: "0.3s",
+            "&:hover": { transform: "scale(1.05)", boxShadow: "0 4px 20px rgba(0,0,0,0.2)" },
           }}
         >
           Download CSV
@@ -530,8 +584,8 @@ export default function AnalysisPage({ data }) {
   );
 }
 
-// Metric Card
-function MetricCard({ label, value }) {
+// Metric Card with animated counter
+function MetricCard({ label, value, prefix = "", suffix = "" }) {
   return (
     <Grid item xs={12} sm={6} md={3}>
       <Card
@@ -539,18 +593,23 @@ function MetricCard({ label, value }) {
           p: 3,
           textAlign: "center",
           boxShadow: 3,
+          borderRadius: 3,
+          background: "linear-gradient(145deg, #ffffff, #e3f2fd)",
           transition: "0.3s",
-          "&:hover": { transform: "translateY(-5px)", boxShadow: 6 },
+          "&:hover": { transform: "translateY(-5px)", boxShadow: 8 },
         }}
       >
         <Typography variant="body2" color="text.secondary">
           {label}
         </Typography>
-        <Typography variant="h6" fontWeight="bold">
-          {value}
+        <Typography variant="h6" fontWeight="bold" sx={{ color: "#000" }}>
+          {value !== undefined && value !== null ? (
+            <CountUp end={value} duration={1.5} separator="," prefix={prefix} suffix={suffix} decimals={2} />
+          ) : (
+            "N/A"
+          )}
         </Typography>
       </Card>
     </Grid>
   );
 }
-
