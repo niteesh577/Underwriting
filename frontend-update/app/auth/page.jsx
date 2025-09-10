@@ -126,19 +126,18 @@ export default function AuthPage() {
   const router = useRouter();
 
   const signInWithGoogle = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-    });
+const signInWithGoogle = async () => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}/home`, // 👈 Always redirect here
+    },
+  });
 
-    if (error) {
-      console.error("OAuth error:", error.message);
-    } else if (data?.user) {
-      // Send to backend
-      await sendUserToBackend(data.user);
-      router.push("/home");
-    }
-  };
-
+  if (error) {
+    console.error("OAuth error:", error.message);
+  }
+};
   const signUpWithEmail = async () => {
     if (!name) {
       alert("Please enter your name");
@@ -150,7 +149,7 @@ export default function AuthPage() {
       password,
       options: {
         data: { name }, // ✅ Include name in Supabase metadata
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/home`,
       },
     });
 
