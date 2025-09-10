@@ -110,8 +110,6 @@
 //   );
 // }
 
-
-
 "use client";
 import { useState } from "react";
 import { supabase } from "@/services/supabaseClient";
@@ -120,24 +118,24 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function AuthPage() {
-  const [name, setName] = useState("");        // ✅ Added name state
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
 
-  
-const signInWithGoogle = async () => {
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${window.location.origin}/home`, // 👈 Always redirect here
-    },
-  });
+  const signInWithGoogle = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/home`,
+      },
+    });
 
-  if (error) {
-    console.error("OAuth error:", error.message);
-  }
-};
+    if (error) {
+      console.error("OAuth error:", error.message);
+    }
+  };
+
   const signUpWithEmail = async () => {
     if (!name) {
       alert("Please enter your name");
@@ -148,7 +146,7 @@ const signInWithGoogle = async () => {
       email,
       password,
       options: {
-        data: { name }, // ✅ Include name in Supabase metadata
+        data: { name },
         emailRedirectTo: `${window.location.origin}/home`,
       },
     });
@@ -158,31 +156,31 @@ const signInWithGoogle = async () => {
     } else if (data?.user) {
       console.log("Sign-up success:", data.user);
 
-      // Send to backend
       await sendUserToBackend({
         ...data.user,
         user_metadata: { ...data.user.user_metadata, name },
       });
 
-      // Redirect to /home
       router.push("/home");
     }
   };
 
-  // 🔥 Send user details to FastAPI backend
   const sendUserToBackend = async (user) => {
     try {
-      const response = await fetch("https://underwriting-at5l.onrender.com/save_user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: user.email,
-          name: user.user_metadata?.name || "",
-          picture: user.user_metadata?.picture || "",
-        }),
-      });
+      const response = await fetch(
+        "https://underwriting-at5l.onrender.com/save_user",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: user.email,
+            name: user.user_metadata?.name || "",
+            picture: user.user_metadata?.picture || "",
+          }),
+        }
+      );
 
       if (!response.ok) {
         console.error("Failed to send user to backend");
@@ -198,9 +196,11 @@ const signInWithGoogle = async () => {
     <div className="flex flex-col items-center justify-center h-screen p-4">
       <div className="text-center mb-8">
         <div className="flex justify-center">
-        <Image src="/login.png" alt="logo" width={220} height={120} />
+          <Image src="/login.png" alt="logo" width={220} height={120} />
         </div>
-        <h2 className="text-2xl font-bold mt-4">Welcome to Acquire Underwriting</h2>
+        <h2 className="text-2xl font-bold mt-4">
+          Welcome to Acquire Underwriting
+        </h2>
         <p className="text-gray-600 mt-2">Sign in or sign up to continue</p>
       </div>
       <div className="space-y-4 w-full max-w-sm">
