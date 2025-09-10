@@ -3,9 +3,11 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-
+import { useRouter } from "next/navigation"; 
+import { Button } from "@/components/ui/button";
 export default function AnalysisPage() {
   const [data, setData] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
     const stored = sessionStorage.getItem("underwritingResult");
@@ -58,6 +60,13 @@ export default function AnalysisPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
+             <Button
+  variant="default"
+  className="absolute top-4 right-4 z-50"
+  onClick={() => router.push("/home")}
+>
+  Back to Home
+</Button>
       <h1 className="text-3xl font-bold text-gray-800 mb-6 animate-fadeIn">
         Underwriting Analysis for {quick_summary.property || "N/A"}
       </h1>
