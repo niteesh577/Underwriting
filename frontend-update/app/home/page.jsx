@@ -34,7 +34,7 @@ export default function HomePage() {
     files.forEach((file) => formData.append("files", file));
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/underwrite", { method: "POST", body: formData });
+      const response = await fetch("https://underwriting-at5l.onrender.com/underwrite", { method: "POST", body: formData });
       if (!response.ok) return alert("Error processing files");
 
       const result = await response.json();
