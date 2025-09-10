@@ -125,7 +125,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const router = useRouter();
 
-  const signInWithGoogle = async () => {
+  
 const signInWithGoogle = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
