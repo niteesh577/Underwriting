@@ -173,7 +173,7 @@ export default function AuthPage() {
   // 🔥 Send user details to FastAPI backend
   const sendUserToBackend = async (user) => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/save_user", {
+      const response = await fetch("https://underwriting-at5l.onrender.com/save_user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
