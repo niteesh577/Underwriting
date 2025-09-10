@@ -1,9 +1,9 @@
 from langsmith import traceable
 from typing import List, Dict, Any, Optional
 import pandas as pd
-from helpers import _clean_dataframe, _first_match, _to_number
-from text_parsers import *
-from table_parsers import *
+from utils.helpers import _clean_dataframe, _first_match, _to_number
+from utils.text_parsers import *
+from utils.table_parsers import *
 import re
 
 @traceable(name="aggregate_rent_roll")

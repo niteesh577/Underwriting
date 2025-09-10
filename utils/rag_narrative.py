@@ -9,8 +9,12 @@ from langchain_openai import ChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 import re
 from langchain.prompts import ChatPromptTemplate
-from langchain_core import RunnableParallel, RunnableLambda, RunnablePassthrough, RunnableChain
-from langchain.output_parsers import StrOutputParser
+from langchain_core.runnables import (
+    RunnableLambda,
+    RunnableParallel,
+    RunnablePassthrough,
+)
+from langchain_core.output_parsers import StrOutputParser
 import json
 
 

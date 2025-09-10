@@ -4,13 +4,14 @@ import json
 import tempfile
 import shutil
 from typing import List, Dict, Any
-
+from fastapi import FastAPI, HTTPException
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client
 from datetime import datetime
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
 load_dotenv() 
 
@@ -59,18 +60,30 @@ def save_to_supabase(narrative_fields, metrics, t12_summary, ai_summary, ai_anal
 
 
 
-# Import your existing pipeline functions
-from tester import (
-    load_files,
-    extract_tables_to_dataframes_from_docs,
-    aggregate_rent_roll,
-    aggregate_t12,
-    split_documents,
-    extract_narrative_fields,
-    compute_metrics,
-    generate_underwriting_summary,
-    generate_underwriting_analysis  # <-- Added
-)
+# # Import your existing pipeline functions
+# from tester import (
+#     load_files,
+#     extract_tables_to_dataframes_from_docs,
+#     aggregate_rent_roll,
+#     aggregate_t12,
+#     split_documents,
+#     extract_narrative_fields,
+#     compute_metrics,
+#     generate_underwriting_summary,
+#     generate_underwriting_analysis  # <-- Added
+# )
+
+from utils.aggregation import *
+from utils.ai_summary import *
+from utils.ai_analysis import *
+from utils.file_loaders import *
+from utils.helpers import *
+from utils.metrics import *
+from utils.orchestration import *
+from utils.rag_narrative import *
+from utils.table_parsers import *
+from utils.text_parsers import *
+
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -83,9 +96,10 @@ origins = [
     "http://127.0.0.1:5173",
 ]
 
+# CORS setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # temporarily allow all origins for dev
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -95,6 +109,33 @@ app.add_middleware(
 def build_vectorstore(docs):
     embeddings = OpenAIEmbeddings(model=os.getenv("EMBED_MODEL", "text-embedding-3-small"))
     return FAISS.from_documents(docs, embeddings)
+
+
+# User schema
+class User(BaseModel):
+    email: str
+    name: str
+    picture: str
+
+@app.post("/save_user")
+def save_user(user: User):
+    try:
+        # Check if already exists
+        existing = supabase.table("users").select("*").eq("email", user.email).execute()
+        if existing.data:
+            return {"message": "User already exists"}
+
+        # Insert user
+        result = supabase.table("users").insert({
+            "email": user.email,
+            "name": user.name,
+            "picture": user.picture
+        }).execute()
+
+        return {"message": "User saved", "data": result.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/underwrite")
 async def underwrite(
