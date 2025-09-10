@@ -111,7 +111,7 @@
 // }
 
 "use client";
-import { useState } from "react";
+import { useState, useEffect} from "react";
 import { supabase } from "@/services/supabaseClient";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -191,6 +191,23 @@ export default function AuthPage() {
       console.error("Error sending user to backend:", err);
     }
   };
+
+     // Detect any authenticated user (email or OAuth) and send to backend
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN" && session?.user) {
+          const user = session.user;
+          await sendUserToBackend(user);
+          router.push("/home");
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [router]);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen p-4">
