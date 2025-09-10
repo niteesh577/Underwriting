@@ -58,13 +58,6 @@ export default function AnalysisPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <Button
-  variant="default"
-  className="absolute top-4 right-4 z-50"
-  onClick={() => router.push("/home")}
->
-  Back to Home
-</Button>
       <h1 className="text-3xl font-bold text-gray-800 mb-6 animate-fadeIn">
         Underwriting Analysis for {quick_summary.property || "N/A"}
       </h1>
