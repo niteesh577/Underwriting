@@ -1683,7 +1683,7 @@ def compute_metrics(
 
     purchase_price = _to_number(overrides.get("purchase_price"))
     if not purchase_price and noi:
-        purchase_price = noi / 0.075  # assume 7.5% cap if price not given
+        purchase_price = 5000000 # assume 7.5% cap if price not given
 
     annual_debt_service = _to_number(overrides.get("annual_debt_service")) or (purchase_price * 0.05 if purchase_price else None)
     equity_invested = _to_number(overrides.get("equity_invested")) or (purchase_price * 0.25 if purchase_price else None)
